@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gunbound Legacy | Classic MMORPG Artillery Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --primary: #ff5e00;
+            --secondary: #00a8ff;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+        }
+        
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .game-card {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .character-select {
+            transition: all 0.3s ease;
+        }
+        
+        .character-select:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 10px rgba(255, 94, 0, 0.7));
+        }
+        
+        .character-select.active {
+            border: 3px solid var(--primary);
+            filter: drop-shadow(0 0 15px rgba(255, 94, 0, 0.9));
+        }
+        
+        .damage-number {
+            animation: floatUp 1s ease-out forwards;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        .health-bar {
+            height: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .game-button {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .game-button:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        
+        .game-button:hover:after {
+            left: 100%;
+        }
+        
+        .trajectory-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 2s ease-out forwards;
+        }
+        
+        @keyframes draw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .wind-indicator {
+            animation: shake 0.5s infinite alternate;
+        }
+        
+        @keyframes shake {
+            from { transform: translateX(-2px); }
+            to { transform: translateX(2px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-black bg-opacity-80 backdrop-blur-md fixed w-full z-50 border-b border-orange-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold gradient-text pixel-font">GUNBOUND LEGACY</h1>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            <a href="#" class="text-orange-500 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                            <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Characters</a>
+                            <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Game Modes</a>
+                            <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Shop</a>
+                            <a href="#" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Leaderboard</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-4 flex items-center md:ml-6">
+                        <button class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm font-medium mr-4 game-button">
+                            PLAY NOW
+                        </button>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium game-button">
+                            SIGN IN
+                        </button>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-900 to-black">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div class="text-center md:text-left">
+                    <h1 class="text-4xl md:text-6xl font-bold mb-6 gradient-text pixel-font">GUNBOUND LEGACY</h1>
+                    <p class="text-lg text-gray-300 mb-8 max-w-lg">The classic artillery strategy game returns with stunning 3D graphics, new characters, and intense multiplayer battles!</p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                        <button class="bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-lg text-lg font-bold game-button transform hover:scale-105 transition-transform">
+                            PLAY FOR FREE
+                        </button>
+                        <button class="bg-transparent border-2 border-blue-500 hover:bg-blue-900 hover:bg-opacity-30 text-white px-8 py-4 rounded-lg text-lg font-bold game-button transform hover:scale-105 transition-transform">
+                            WATCH TRAILER
+                        </button>
+                    </div>
+                    <div class="mt-8 flex justify-center md:justify-start">
+                        <div class="flex items-center">
+                            <div class="flex -space-x-2">
+                                <img class="w-10 h-10 rounded-full border-2 border-orange-500" src="https://randomuser.me/api/portraits/women/12.jpg" alt="">
+                                <img class="w-10 h-10 rounded-full border-2 border-orange-500" src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
+                                <img class="w-10 h-10 rounded-full border-2 border-orange-500" src="https://randomuser.me/api/portraits/women/45.jpg" alt="">
+                                <img class="w-10 h-10 rounded-full border-2 border-orange-500" src="https://randomuser.me/api/portraits/men/76.jpg" alt="">
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-300 text-sm">Join <span class="text-orange-500 font-bold">12,543</span> players online now!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="relative w-full h-96 md:h-auto aspect-video bg-gray-800 rounded-xl overflow-hidden border-4 border-orange-500 shadow-2xl">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent z-10"></div>
+                        <div class="absolute inset-0 flex items-center justify-center z-20">
+                            <div class="text-center p-6">
+                                <div class="inline-block bg-black bg-opacity-70 p-4 rounded-full mb-4">
+                                    <i class="fas fa-play text-orange-500 text-4xl"></i>
+                                </div>
+                                <h3 class="text-white text-xl font-bold">GUNBOUND LEGACY GAMEPLAY</h3>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Gameplay screenshot" class="w-full h-full object-cover">
+                    </div>
+                    <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-blue-500 rounded-full opacity-20 z-0"></div>
+                    <div class="absolute -top-6 -right-6 w-32 h-32 bg-orange-500 rounded-full opacity-20 z-0"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Characters Section -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 gradient-text pixel-font">CHOOSE YOUR MECH</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Select from our roster of unique characters, each with special abilities and play styles</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <!-- Character 1 -->
+                <div class="character-select active bg-gray-800 rounded-lg p-4 text-center cursor-pointer border-2 border-transparent">
+                    <div class="w-24 h-24 mx-auto mb-4 relative">
+                        <img src="https://i.imgur.com/JqYeYnV.png" alt="Armor" class="w-full h-full object-contain">
+                        <div class="absolute -bottom-2 left-0 right-0 text-center">
+                            <span class="bg-orange-600 text-white text-xs px-2 py-1 rounded-full">POPULAR</span>
+                        </div>
+                    </div>
+                    <h3 class="text-white font-bold">ARMOR</h3>
+                    <p class="text-gray-400 text-sm">Balanced</p>
+                    <div class="mt-2 flex justify-center space-x-1">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-gray-600"></i>
+                    </div>
+                </div>
+                
+                <!-- Character 2 -->
+                <div class="character-select bg-gray-800 rounded-lg p-4 text-center cursor-pointer border-2 border-transparent">
+                    <div class="w-24 h-24 mx-auto mb-4">
+                        <img src="https://i.imgur.com/m8ZnWQk.png" alt="Boomer" class="w-full h-full object-contain">
+                    </div>
+                    <h3 class="text-white font-bold">BOOMER</h3>
+                    <p class="text-gray-400 text-sm">Area Damage</p>
+                    <div class="mt-2 flex justify-center space-x-1">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                    </div>
+                </div>
+                
+                <!-- Character 3 -->
+                <div class="character-select bg-gray-800 rounded-lg p-4 text-center cursor-pointer border-2 border-transparent">
+                    <div class="w-24 h-24 mx-auto mb-4">
+                        <img src="https://i.imgur.com/3Vh8BQp.png" alt="Knight" class="w-full h-full object-contain">
+                    </div>
+                    <h3 class="text-white font-bold">KNIGHT</h3>
+                    <p class="text-gray-400 text-sm">Precision</p>
+                    <div class="mt-2 flex justify-center space-x-1">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-gray-600"></i>
+                        <i class="fas fa-bolt text-gray-600"></i>
+                    </div>
+                </div>
+                
+                <!-- Character 4 -->
+                <div class="character-select bg-gray-800 rounded-lg p-4 text-center cursor-pointer border-2 border-transparent">
+                    <div class="w-24 h-24 mx-auto mb-4">
+                        <img src="https://i.imgur.com/5QzGq0W.png" alt="Turtle" class="w-full h-full object-contain">
+                    </div>
+                    <h3 class="text-white font-bold">TURTLE</h3>
+                    <p class="text-gray-400 text-sm">Defensive</p>
+                    <div class="mt-2 flex justify-center space-x-1">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-gray-600"></i>
+                    </div>
+                </div>
+                
+                <!-- Character 5 -->
+                <div class="character-select bg-gray-800 rounded-lg p-4 text-center cursor-pointer border-2 border-transparent">
+                    <div class="w-24 h-24 mx-auto mb-4">
+                        <img src="https://i.imgur.com/LgJYqGQ.png" alt="Mage" class="w-full h-full object-contain">
+                    </div>
+                    <h3 class="text-white font-bold">MAGE</h3>
+                    <p class="text-gray-400 text-sm">Magic</p>
+                    <div class="mt-2 flex justify-center space-x-1">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                    </div>
+                </div>
+                
+                <!-- Character 6 -->
+                <div class="character-select bg-gray-800 rounded-lg p-4 text-center cursor-pointer border-2 border-transparent">
+                    <div class="w-24 h-24 mx-auto mb-4">
+                        <img src="https://i.imgur.com/9m5Fbxt.png" alt="Raon" class="w-full h-full object-contain">
+                    </div>
+                    <h3 class="text-white font-bold">RAON</h3>
+                    <p class="text-gray-400 text-sm">Speed</p>
+                    <div class="mt-2 flex justify-center space-x-1">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        <i class="fas fa-bolt text-gray-600"></i>
+                        <i class="fas fa-bolt text-gray-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-center">
+                <button class="bg-transparent border-2 border-blue-500 hover:bg-blue-900 hover:bg-opacity-30 text-white px-8 py-3 rounded-lg text-lg font-bold game-button">
+                    VIEW ALL CHARACTERS
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Features Section -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 gradient-text pixel-font">GAME FEATURES</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Experience the ultimate artillery battle with these exciting features</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="game-card bg-gray-900 rounded-xl p-6 border border-gray-700 hover:border-orange-500">
+                    <div class="w-16 h-16 bg-orange-600 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-3">Multiplayer Battles</h3>
+                    <p class="text-gray-400">Compete against players worldwide in real-time 2v2 or 4v4 matches with ranking systems.</p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="game-card bg-gray-900 rounded-xl p-6 border border-gray-700 hover:border-orange-500">
+                    <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-robot text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-3">Unique Characters</h3>
+                    <p class="text-gray-400">Choose from over 20 distinct characters, each with special abilities and weapons.</p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="game-card bg-gray-900 rounded-xl p-6 border border-gray-700 hover:border-orange-500">
+                    <div class="w-16 h-16 bg-purple-600 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-wind text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-3">Dynamic Weather</h3>
+                    <p class="text-gray-400">Adapt your strategy to changing wind conditions and weather effects that impact gameplay.</p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="game-card bg-gray-900 rounded-xl p-6 border border-gray-700 hover:border-orange-500">
+                    <div class="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-medal text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-3">Ranking System</h3>
+                    <p class="text-gray-400">Climb the competitive ladder and earn exclusive rewards based on your skill level.</p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="game-card bg-gray-900 rounded-xl p-6 border border-gray-700 hover:border-orange-500">
+                    <div class="w-16 h-16 bg-yellow-600 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-tshirt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-3">Customization</h3>
+                    <p class="text-gray-400">Personalize your mech with hundreds of cosmetic items and avatar customizations.</p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="game-card bg-gray-900 rounded-xl p-6 border border-gray-700 hover:border-orange-500">
+                    <div class="w-16 h-16 bg-red-600 rounded-lg flex items-center justify-center mb-6">
+                        <i class="fas fa-trophy text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-3">Tournaments</h3>
+                    <p class="text-gray-400">Participate in weekly tournaments with cash prizes and exclusive in-game rewards.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gameplay Preview Section -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-0 left-0 w-64 h-64 bg-orange-500 rounded-full filter blur-3xl opacity-20"></div>
+            <div class="absolute bottom-0 right-0 w-64 h-64 bg-blue-500 rounded-full filter blur-3xl opacity-20"></div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto relative">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 gradient-text pixel-font">GAMEPLAY PREVIEW</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">See the action-packed battles in action</p>
+            </div>
+            
+            <div class="bg-black bg-opacity-50 rounded-xl border border-gray-700 overflow-hidden">
+                <div class="relative aspect-video">
+                    <!-- Game UI Mockup -->
+                    <div class="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                        <div class="w-full h-full relative">
+                            <!-- Game background -->
+                            <div class="absolute inset-0 bg-gradient-to-b from-blue-900 to-green-900 flex items-end">
+                                <!-- Terrain -->
+                                <div class="w-full h-1/3 bg-green-800 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-green-700 to-green-900">
+                                        <div class="absolute top-0 left-0 right-0 h-4 bg-green-600"></div>
+                                        <div class="absolute top-4 left-1/4 w-16 h-8 bg-green-700 rounded-t-full"></div>
+                                        <div class="absolute top-4 left-3/4 w-24 h-12 bg-green-700 rounded-t-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Characters -->
+                            <div class="absolute bottom-1/3 left-1/4 w-16 h-16">
+                                <img src="https://i.imgur.com/JqYeYnV.png" alt="Player 1" class="w-full h-full object-contain">
+                                <div class="absolute -top-6 left-0 right-0 text-center">
+                                    <div class="inline-block bg-black bg-opacity-70 px-2 py-1 rounded">
+                                        <span class="text-white text-xs font-bold">ARMOR</span>
+                                    </div>
+                                </div>
+                                <div class="absolute -top-12 left-0 right-0 text-center">
+                                    <div class="health-bar bg-red-600 rounded-full w-full" style="width: 70%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="absolute bottom-1/3 right-1/4 w-16 h-16 transform scale-x-[-1]">
+                                <img src="https://i.imgur.com/m8ZnWQk.png" alt="Player 2" class="w-full h-full object-contain">
+                                <div class="absolute -top-6 left-0 right-0 text-center">
+                                    <div class="inline-block bg-black bg-opacity-70 px-2 py-1 rounded">
+                                        <span class="text-white text-xs font-bold">BOOMER</span>
+                                    </div>
+                                </div>
+                                <div class="absolute -top-12 left-0 right-0 text-center">
+                                    <div class="health-bar bg-red-600 rounded-full w-full" style="width: 40%;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Projectile -->
+                            <div class="absolute bottom-1/3 left-1/3 w-4 h-4 bg-yellow-400 rounded-full shadow-lg animate-bounce"></div>
+                            
+                            <!-- Damage number -->
+                            <div class="absolute bottom-1/3 right-1/4 -mr-4 damage-number text-red-500 font-bold text-xl">-328</div>
+                            
+                            <!-- Wind indicator -->
+                            <div class="absolute top-4 right-4 bg-black bg-opacity-70 px-3 py-2 rounded-lg flex items-center wind-indicator">
+                                <i class="fas fa-wind text-white mr-2"></i>
+                                <span class="text-white font-bold">← 15</span>
+                            </div>
+                            
+                            <!-- Angle/power indicator -->
+                            <div class="absolute bottom-4 left-4 bg-black bg-opacity-70 px-3 py-2 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-angle-up text-white mr-2"></i>
+                                    <span class="text-white font-bold mr-4">45°</span>
+                                    <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                                    <span class="text-white font-bold">85%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Turn timer -->
+                            <div class="absolute top-4 left-4 bg-black bg-opacity-70 px-3 py-2 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-hourglass-half text-white mr-2"></i>
+                                    <span class="text-white font-bold">15s</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Chat -->
+                            <div class="absolute bottom-4 right-4 w-48 bg-black bg-opacity-70 rounded-lg p-2">
+                                <div class="text-green-400 text-xs mb-1">Player1: Nice shot!</div>
+                                <div class="text-red-400 text-xs mb-1">Player2: Lucky hit...</div>
+                                <div class="text-gray-400 text-xs">Player3 joined the game</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute inset-0 flex items-center justify-center z-20">
+                        <button class="bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-4 rounded-full transition-all">
+                            <i class="fas fa-play text-orange-500 text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <h3 class="text-white font-bold mb-2">Strategic Gameplay</h3>
+                            <p class="text-gray-400 text-sm">Calculate angles, power, and wind to land perfect shots on your opponents.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold mb-2">Team Coordination</h3>
+                            <p class="text-gray-400 text-sm">Work with teammates to combine attacks and dominate the battlefield.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold mb-2">Skill Matters</h3>
+                            <p class="text-gray-400 text-sm">Master each character's unique abilities to gain the upper hand.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold mb-4 gradient-text pixel-font">PLAYER TESTIMONIALS</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">What our community says about Gunbound Legacy</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-gray-900 rounded-xl p-6 border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Player" class="w-12 h-12 rounded-full border-2 border-orange-500">
+                        <div class="ml-4">
+                            <h3 class="text-white font-bold">MarkJohnson</h3>
+                            <div class="flex text-yellow-400 text-sm">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-300 italic">"Gunbound Legacy brings back all the nostalgia of the original but with amazing modern graphics and gameplay. The new characters are balanced and fun to play!"</p>
+                    <div class="mt-4 flex items-center text-sm text-gray-500">
+                        <i class="fas fa-clock mr-1"></i>
+                        <span>Played 120+ hours</span>
+                    </div>
+                </div>
+                
+                <!-- Testimonial 2 -->
+                <div class="bg-gray-900 rounded-xl p-6 border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Player" class="w-12 h-12 rounded-full border-2 border-orange-500">
+                        <div class="ml-4">
+                            <h3 class="text-white font-bold">SarahK</h3>
+                            <div class="flex text-yellow-400 text-sm">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-300 italic">"I love the competitive ranking system. It's so satisfying to climb the ladder and see your skills improve. The community is active and matches are quick to find."</p>
+                    <div class="mt-4 flex items-center text-sm text-gray-500">
+                        <i class="fas fa-clock mr-1"></i>
+                        <span>Played 85+ hours</span>
+                    </div>
+                </div>
+                
+                <!-- Testimonial 3 -->
+                <div class="bg-gray-900 rounded-xl p-6 border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Player" class="w-12 h-12 rounded-full border-2 border-orange-500">
+                        <div class="ml-4">
+                            <h3 class="text-white font-bold">ProGamer123</h3>
+                            <div class="flex text-yellow-400 text-sm">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-300 italic">"The tournament system is amazing! I've won several cash prizes already. The devs really listen to the community and keep adding new content regularly."</p>
+                    <div class="mt-4 flex items-center text-sm text-gray-500">
+                        <i class="fas fa-clock mr-1"></i>
+                        <span>Played 250+ hours</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-orange-600 to-blue-600">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl md:text-5xl font-bold mb-6 text-white pixel-font">READY FOR BATTLE?</h2>
+            <p class="text-white text-xl mb-8">Join millions of players worldwide in the ultimate artillery strategy game</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="bg-white hover:bg-gray-100 text-orange-600 px-8 py-4 rounded-lg text-lg font-bold game-button transform hover:scale-105 transition-transform">
+                    DOWNLOAD NOW
+                </button>
+                <button class="bg-transparent border-2 border-white hover:bg-white hover:bg-opacity-20 text-white px-8 py-4 rounded-lg text-lg font-bold game-button transform hover:scale-105 transition-transform">
+                    WATCH GAMEPLAY
+                </button>
+            </div>
+            <div class="mt-8 flex justify-center space-x-6">
+                <div class="text-center">
+                    <div class="text-white text-3xl font-bold">10M+</div>
+                    <div class="text-white text-opacity-80">Players</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-white text-3xl font-bold">4.9</div>
+                    <div class="text-white text-opacity-80">Rating</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-white text-3xl font-bold">20+</div>
+                    <div class="text-white text-opacity-80">Characters</div>
+                </div>
+            </div>
+        </
+</html>
